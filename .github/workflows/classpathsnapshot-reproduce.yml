@@ -1,0 +1,38 @@
+name: Reproduce classpath snapshot issue
+on: push
+jobs:
+  publish:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build package With 1 version
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: clean app:assembleDebug -i
+      - name: Upload 1 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: 1-artifact
+          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Sed with 2 version
+        run: |
+          sed -i "" 's/dependency-release-1.aar/dependency-release-2.aar/g' app/build.gradle
+      - name: Build package With 2 version
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: app:assembleDebug -i
+      - name: Upload 2 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: 2-artifact
+          path: app/build/outputs/apk/debug/app-debug.apk
